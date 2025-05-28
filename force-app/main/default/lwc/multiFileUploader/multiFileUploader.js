@@ -1,8 +1,8 @@
 import { LightningElement, api, track } from 'lwc';
 
 export default class MultiFileUploader extends LightningElement {
-    @api fileListJson;
     @api recordId;
+    @api fileListJson; // ✅ This must be @api to expose to Flow
 
     @track isReady = false;
     @track fileCount = 0;
@@ -34,13 +34,9 @@ export default class MultiFileUploader extends LightningElement {
         }
 
         Promise.all(promises).then(() => {
-            this.fileListJson = JSON.stringify(fileList);
+            this.fileListJson = JSON.stringify(fileList); // Now visible to Flow
             this.fileCount = fileList.length;
             this.isReady = true;
-
-            this.dispatchEvent(new CustomEvent('filesready', {
-                detail: { fileListJson: this.fileListJson }
-            }));
         }).catch(error => {
             console.error('Error reading files:', error);
         });

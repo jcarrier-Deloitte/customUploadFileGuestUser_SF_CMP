@@ -1,6 +1,6 @@
 import { LightningElement, api, track } from 'lwc';
 
-export default class FileUploaderBase64 extends LightningElement {
+export default class UploadSingleFileCustom extends LightningElement {
     @api fileName;
     @api fileBody;
 
