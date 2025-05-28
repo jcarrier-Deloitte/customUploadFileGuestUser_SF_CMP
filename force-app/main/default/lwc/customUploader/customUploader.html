@@ -1,0 +1,11 @@
+<template>
+    <lightning-input
+        type="file"
+        label="Upload a File"
+        onchange={handleFileChange}>
+    </lightning-input>
+
+    <template if:true={isReady}>
+        <p>✅ File ready: {fileName}</p>
+    </template>
+</template>

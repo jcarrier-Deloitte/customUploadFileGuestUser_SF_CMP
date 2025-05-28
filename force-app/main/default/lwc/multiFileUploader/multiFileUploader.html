@@ -1,0 +1,12 @@
+<template>
+    <lightning-input
+        type="file"
+        label="Upload Multiple Files"
+        multiple
+        onchange={handleFileChange}>
+    </lightning-input>
+
+    <template if:true={isReady}>
+        <p>✅ {fileCount} file(s) ready for upload</p>
+    </template>
+</template>
