@@ -1,44 +1,75 @@
 import { LightningElement, api, track } from 'lwc';
 
 export default class MultiFileUploader extends LightningElement {
-    @api recordId;
-    @api fileListJson; // ✅ This must be @api to expose to Flow
+    /** Allowed extensions (override via Flow if you like) */
+    @api acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.docx', '.txt'];
 
-    @track isReady = false;
-    @track fileCount = 0;
+    @api recordId;
+    @api fileListJson;
+
+    @track isReady    = false;
+    @track fileCount  = 0;
+    @track errors     = [];
+
+    /** e.g. ".pdf,.png,.jpg" */
+    get acceptString() {
+        return this.acceptedFormats.join(',');
+    }
 
     handleFileChange(event) {
-        const files = event.target.files;
+        const files = Array.from(event.target.files);
         if (!files.length) return;
 
-        const fileList = [];
-        const promises = [];
+        // Normalize extensions to lowercase
+        const allowed = this.acceptedFormats.map(ext => ext.toLowerCase());
+        const validFiles   = [];
+        const invalidNames = [];
 
-        for (let file of files) {
-            const reader = new FileReader();
+        // Separate valid/invalid
+        files.forEach(file => {
+            const idx = file.name.lastIndexOf('.');
+            const ext = idx > 0 ? file.name.substring(idx).toLowerCase() : '';
+            if (allowed.includes(ext)) {
+                validFiles.push(file);
+            } else {
+                invalidNames.push(file.name);
+            }
+        });
 
-            const promise = new Promise((resolve, reject) => {
-                reader.onload = () => {
-                    const base64 = reader.result.split(',')[1];
-                    fileList.push({
-                        fileName: file.name,
-                        fileBody: base64
-                    });
-                    resolve();
-                };
-                reader.onerror = reject;
-            });
-
-            reader.readAsDataURL(file);
-            promises.push(promise);
+        // If there were invalid ones, show errors and stop
+        if (invalidNames.length) {
+            this.errors = invalidNames.map(n => `"${n}" is not allowed`);
+            this.isReady = false;
+            this.fileCount = 0;
+            this.fileListJson = null;
+            return;
+        } else {
+            this.errors = [];
         }
 
-        Promise.all(promises).then(() => {
-            this.fileListJson = JSON.stringify(fileList); // Now visible to Flow
-            this.fileCount = fileList.length;
-            this.isReady = true;
-        }).catch(error => {
-            console.error('Error reading files:', error);
-        });
+        // Read only the valid files
+        const list = [];
+        const reads = validFiles.map(file => new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                list.push({
+                    fileName: file.name,
+                    fileBody: reader.result.split(',')[1]
+                });
+                res();
+            };
+            reader.onerror = rej;
+            reader.readAsDataURL(file);
+        }));
+
+        Promise.all(reads)
+            .then(() => {
+                this.fileListJson = JSON.stringify(list);
+                this.fileCount    = list.length;
+                this.isReady      = true;
+            })
+            .catch(err => {
+                console.error('Error reading files:', err);
+            });
     }
 }
