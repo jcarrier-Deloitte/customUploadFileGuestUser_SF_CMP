@@ -1,31 +1,31 @@
 import { LightningElement, api, track } from 'lwc';
 
 export default class MultiFileUploader extends LightningElement {
-    /** Allowed extensions (override via Flow if you like) */
     @api acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.docx', '.txt'];
-
     @api recordId;
     @api fileListJson;
 
     @track isReady    = false;
     @track fileCount  = 0;
     @track errors     = [];
+    @track fileList   = []; // <-- Stores { fileName, fileBody }
 
-    /** e.g. ".pdf,.png,.jpg" */
     get acceptString() {
         return this.acceptedFormats.join(',');
+    }
+
+    get fileNames() {
+        return this.fileList.map(f => f.fileName);
     }
 
     handleFileChange(event) {
         const files = Array.from(event.target.files);
         if (!files.length) return;
 
-        // Normalize extensions to lowercase
         const allowed = this.acceptedFormats.map(ext => ext.toLowerCase());
         const validFiles   = [];
         const invalidNames = [];
 
-        // Separate valid/invalid
         files.forEach(file => {
             const idx = file.name.lastIndexOf('.');
             const ext = idx > 0 ? file.name.substring(idx).toLowerCase() : '';
@@ -36,23 +36,22 @@ export default class MultiFileUploader extends LightningElement {
             }
         });
 
-        // If there were invalid ones, show errors and stop
         if (invalidNames.length) {
             this.errors = invalidNames.map(n => `"${n}" is not allowed`);
             this.isReady = false;
             this.fileCount = 0;
             this.fileListJson = null;
+            this.fileList = [];
             return;
         } else {
             this.errors = [];
         }
 
-        // Read only the valid files
-        const list = [];
+        const newList = [];
         const reads = validFiles.map(file => new Promise((res, rej) => {
             const reader = new FileReader();
             reader.onload = () => {
-                list.push({
+                newList.push({
                     fileName: file.name,
                     fileBody: reader.result.split(',')[1]
                 });
@@ -64,12 +63,23 @@ export default class MultiFileUploader extends LightningElement {
 
         Promise.all(reads)
             .then(() => {
-                this.fileListJson = JSON.stringify(list);
-                this.fileCount    = list.length;
-                this.isReady      = true;
+                this.fileList = [...this.fileList, ...newList]; // append new files
+                this.updateFileState();
             })
             .catch(err => {
                 console.error('Error reading files:', err);
             });
+    }
+
+    handleRemoveFile(event) {
+        const nameToRemove = event.target.dataset.name;
+        this.fileList = this.fileList.filter(f => f.fileName !== nameToRemove);
+        this.updateFileState();
+    }
+
+    updateFileState() {
+        this.fileCount = this.fileList.length;
+        this.fileListJson = JSON.stringify(this.fileList);
+        this.isReady = this.fileCount > 0;
     }
 }

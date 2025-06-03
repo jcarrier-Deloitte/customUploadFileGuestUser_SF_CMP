@@ -10,4 +10,22 @@
     <template if:true={isReady}>
         <p>✅ {fileCount} file(s) ready for upload</p>
     </template>
+    <template if:true={fileList.length}>
+        <p><strong>Files selected:</strong></p>
+        <ul>
+            <template for:each={fileList} for:item="file">
+                <li key={file.fileName}>
+                    {file.fileName}
+                    <button
+                        type="button"
+                        data-name={file.fileName}
+                        onclick={handleRemoveFile}
+                        class="slds-button slds-button_icon slds-button_icon-error"
+                        title="Remove this file">
+                        ❌
+                    </button>
+                </li>
+            </template>
+        </ul>
+    </template>
 </template>
