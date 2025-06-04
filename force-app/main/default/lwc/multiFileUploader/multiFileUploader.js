@@ -3,7 +3,7 @@ import { LightningElement, api, track } from 'lwc';
 export default class MultiFileUploader extends LightningElement {
     @api acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.docx', '.txt'];
     @api recordId;
-    @api fileListJson;
+    @api fileListJson = '[]'; // initialize to empty array
 
     @track isReady    = false;
     @track fileCount  = 0;
@@ -20,7 +20,12 @@ export default class MultiFileUploader extends LightningElement {
 
     handleFileChange(event) {
         const files = Array.from(event.target.files);
-        if (!files.length) return;
+        if (!files.length) {
+            // No files selected: reset state
+            this.fileList = [];
+            this.updateFileState();
+            return;
+        }
 
         const allowed = this.acceptedFormats.map(ext => ext.toLowerCase());
         const validFiles   = [];
@@ -40,7 +45,7 @@ export default class MultiFileUploader extends LightningElement {
             this.errors = invalidNames.map(n => `"${n}" is not allowed`);
             this.isReady = false;
             this.fileCount = 0;
-            this.fileListJson = null;
+            this.fileListJson = '[]';
             this.fileList = [];
             return;
         } else {
@@ -79,6 +84,7 @@ export default class MultiFileUploader extends LightningElement {
 
     updateFileState() {
         this.fileCount = this.fileList.length;
+        // Always produce a valid JSON array string, even if empty
         this.fileListJson = JSON.stringify(this.fileList);
         this.isReady = this.fileCount > 0;
     }
