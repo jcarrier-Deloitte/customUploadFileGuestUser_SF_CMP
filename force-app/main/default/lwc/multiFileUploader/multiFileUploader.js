@@ -18,6 +18,23 @@ export default class MultiFileUploader extends LightningElement {
         return this.fileList.map(f => f.fileName);
     }
 
+    connectedCallback() {
+        try {
+            const parsed = JSON.parse(this.fileListJson);
+            if (Array.isArray(parsed)) {
+                this.fileList = parsed;
+                this.fileCount = parsed.length;
+                this.isReady = this.fileCount > 0;
+            }
+        } catch (e) {
+            console.warn('Invalid fileListJson on init:', e);
+            this.fileList = [];
+            this.fileCount = 0;
+            this.isReady = false;
+        }
+    }
+    
+
     handleFileChange(event) {
         const files = Array.from(event.target.files);
         if (!files.length) {
