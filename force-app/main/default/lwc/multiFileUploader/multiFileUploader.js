@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from 'lwc';
 
 export default class MultiFileUploader extends LightningElement {
-    @api acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.docx', '.txt'];
+    @api acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.docx', '.txt', '.heic'];
     @api recordId;
     @api fileListJson = '[]'; // initialize to empty array
 
